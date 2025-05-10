@@ -28,6 +28,7 @@ router.post('/login', async( req , res ) =>{
             {
               id: user._id,
               isAdmin: user.isAdmin,
+              isReporter: user.isReporter
             },
             process.env.JWT_SECRET_KEY,
             // {expiresIn:"1m"}
@@ -38,8 +39,8 @@ router.post('/login', async( req , res ) =>{
         res.status(200).json({data: rest,token: accessToken, message:"user login successfully"})
         
     } catch(err){
-        return res.status(400).json({message:'sai email hoặc mật khẩu'})
         console.log('err while create user',err)
+        return res.status(400).json({message:'sai email hoặc mật khẩu'})
     }
 })
 
