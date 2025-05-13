@@ -1,16 +1,17 @@
 
 const mongoose = require('mongoose')
-
+const { Schema } = mongoose;
 const PostSchema = new mongoose.Schema(
     {
-        title: { type: String , required: true, unique: false},
-        content: { type: String},
+        title: { type: String , required: true },
+        content: { type: String },
         thumbnail: { type: String, required: true },
-        imgGallery: { type: Array},
-        categories: { type: Array},
-        authorId: { type: Schema.Types.ObjectId, ref: 'User'},
-        view: { type: Number },
-        isApproved: {type: Boolean}
+        imgGallery: { type: Array },
+        category: { type: String },
+        authorId: { type: Schema.Types.ObjectId, ref: 'User' },
+        view: { type: Number, default:0 },
+        isApproved: { type: Boolean , default: false },
+        isPosted: { type: Boolean }
     },
     { timestamps: true }
 )
