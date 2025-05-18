@@ -50,6 +50,36 @@ router.put('/:userId/update-password', async( req , res ) =>{
     }
 })
 
+//get all users by page and limit 
+router.get('/', async(req, res)=>{
+    const page = parseInt(req.query.page)
+    const limit = parseInt(req.query.limit)
+    const isReporter = req.query.isReporter==='true'?true:false
+    const isAdmin = req.query.isAdmin==='true'?true:false
+    try {
+        const users = await User.find({
+            $and: [
+                isReporter ? {isReporter: isReporter}:{},
+                isAdmin ? {isAdmin: isAdmin}:{},
+            ]
+        }).sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit).select("-password")
+
+        const totalUsers = await User.countDocuments({
+            $and: [
+                isReporter ? {isReporter: isReporter}:{},
+                isAdmin ? {isAdmin: isAdmin}:{},
+            ]
+        }) 
+
+        const totalPage = Math.ceil(totalUsers/limit)
+        const hasNext = page*limit < totalUsers ? true : false
+        res.status(200).json({message:'get users successfully', users: users, totalPage: totalPage,
+            totalUsers: totalUsers, hasNext: hasNext, limit: limit})
+    } catch(err) {
+        console.log('err while fetching users',err)
+    }
+})
+
 
 
 module.exports = router
