@@ -1,9 +1,10 @@
 const mongoose = require('mongoose')
+const { Schema } = mongoose;
 
 const CommentSchema = new mongoose.Schema(
     {
         postId: { type:String , required: true},
-        content: { type: String , required: true, unique: false},
+        content: { type: String , required: true},
         userId: { type: Schema.Types.ObjectId, ref: 'User'},
         imgGallery: { type: Array},
         type: { 
@@ -11,9 +12,8 @@ const CommentSchema = new mongoose.Schema(
             enum: ['thread','comment'],
             required: true,
         },
-        refCommentIdTypeThread: { type: String},
-        refCommentUserId: { type: String },
-        refCommentUsername: { type: String },
+        refCommentIdTypeThread: { type: String , default:null},
+        refCommentUserId: { type: Schema.Types.ObjectId, ref: 'User' , default:null},
         isApproved: { type: Boolean, default: true},
         isReplied: { type: Boolean, default: false},
     },

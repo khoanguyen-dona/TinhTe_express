@@ -17,6 +17,9 @@ const mongoose = require('mongoose')
 const postRoute = require('./routes/post')
 const authRoute = require('./routes/auth')
 const userRoute = require('./routes/user')
+const commentRoute = require('./routes/comment')
+const reportCommentRoute = require('./routes/reportComment')
+
 
 mongoose.connect(process.env.MONGO_DB)
         .then(() => console.log("DB connect successfully"))
@@ -33,8 +36,8 @@ app.use(bodyParser.json());
 app.use('/api/post', postRoute)
 app.use('/api/auth', authRoute)
 app.use('/api/user', userRoute)
-
-
+app.use('/api/comment', commentRoute)
+app.use ('/api/report-comment', reportCommentRoute)
 // Session setup
 app.use(
     session({
