@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const CommentEmotionSchema = new mongoose.Schema(
     {
         commentId : { type: String, required: true},
-        userId: { type: Schema.Types.ObjectId, ref: 'User'},
+        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true},
         type: { 
             type: String , 
             enum: ['like','love','fun','sad','wow'],
