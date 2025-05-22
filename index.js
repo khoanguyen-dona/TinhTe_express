@@ -20,6 +20,7 @@ const userRoute = require('./routes/user')
 const commentRoute = require('./routes/comment')
 const reportCommentRoute = require('./routes/reportComment')
 const commentEmotionRoute = require('./routes/commentEmotion')
+const postEmotionRoute = require('./routes/postEmotion')
 
 mongoose.connect(process.env.MONGO_DB)
         .then(() => console.log("DB connect successfully"))
@@ -39,6 +40,7 @@ app.use('/api/user', userRoute)
 app.use('/api/comment', commentRoute)
 app.use ('/api/report-comment', reportCommentRoute)
 app.use('/api/comment-emotion', commentEmotionRoute)
+app.use('/api/post-emotion', postEmotionRoute)
 // Session setup
 app.use(
     session({

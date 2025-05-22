@@ -1,27 +1,27 @@
 const router = require('express').Router()
-const CommentEmotion = require('../models/CommentEmotion')
+const PostEmotion = require('../models/PostEmotion')
 
 
-// create comment emotion
+// create post emotions
 router.post('/', async(req, res)=>{
     try {
-        const emotion = await CommentEmotion.findOne({
+        const emotion = await PostEmotion.findOne({
             $and:[
-                {commentId: req.body.commentId},
+                {postId: req.body.postId},
                 {userId: req.body.userId},
             ]
         })
         if(emotion){
             if(emotion.type===req.body.type){
-                 await CommentEmotion.findByIdAndDelete(emotion._id)
-                res.status(200).json({message:'delete comment emotion succesfully'}) 
+                 await PostEmotion.findByIdAndDelete(emotion._id)
+                res.status(200).json({message:'delete post emotion succesfully'}) 
             }else {
                 emotion.type = req.body.type
                 emotion.save()
                 res.status(200).json({message:'change emotion type succesfully',emotion:emotion})
             }
         } else {   
-            const emotion = new CommentEmotion(req.body)
+            const emotion = new PostEmotion(req.body)
             await emotion.save()
             res.status(200).json({message: 'post emotions successfully', emotion: emotion})
         }
@@ -31,14 +31,14 @@ router.post('/', async(req, res)=>{
     }
 })
 
-//get comment emotion by userId and commentId
-router.get('/:commentId', async (req,res) => {
-    const commentId = req.params.commentId
+//get post emotions by userId and postId
+router.get('/:postId', async (req,res) => {
+    const postId = req.params.postId
     const userId= req.query.userId
     try {
-        const userEmotion = await CommentEmotion.find({
+        const userEmotion = await PostEmotion.find({
             $and:[
-                {commentId: commentId},
+                {postId: postId},
                 userId ? {userId: userId} : {}
             ]
         }).populate('userId','_id username img')
@@ -47,6 +47,9 @@ router.get('/:commentId', async (req,res) => {
         console.log('fetch user emotion failed',err)
     }
 })
+
+
+
 
 
 
