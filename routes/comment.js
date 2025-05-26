@@ -89,5 +89,39 @@ router.get('/refCommentId/:commentId/replyNumber',  async (req, res) => {
 } )
 
 
+// get commentCount base on post
+router.get('/comment-count/:postId', async(req, res)=>{
+    try {     
+        const totalComment = await Comment.countDocuments({postId: req.params.postId})       
+        res.status(200).json({message:'get comment count by post successfully', count: totalComment})
+              
+    } catch(err) {
+        console.log('err while fetching post',err)
+    }
+})
+
+// get commentCount base on userId
+router.get('/comment-count/user/:userId', async(req, res)=>{
+    const userId = req.params.userId
+    try {     
+        const totalComment = await Comment.countDocuments({userId: userId})       
+        res.status(200).json({message:'get comment count by user successfully', count: totalComment})
+              
+    } catch(err) {
+        console.log('err while fetching post',err)
+    }
+})
+
+//get latest comment base on postId
+router.get('/latest-comment/:postId', async(req, res)=>{
+    try {
+        const latestComment = await Comment.find({postId: req.params.postId}).sort({createdAt:-1}).limit(1).populate('userId','_id username img')
+        res.status(200).json({message:'get latest post successfully', latestComment: latestComment})
+    } catch(err){   
+        console.log('fetch latest post failed ', err)
+        
+    }
+})
+
 
 module.exports = router

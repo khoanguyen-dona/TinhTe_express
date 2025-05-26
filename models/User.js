@@ -9,6 +9,8 @@ const UserSchema = new mongoose.Schema(
         isReporter: { type: Boolean, default: false },
         img: { type: String , default:'' },
         verified: { type: Boolean, default: false },
+        emailVerified: { type: Boolean, default: false},
+        description: { type: String, default: ''}
         // autoDelete: { type: Date, default: Date.now(), expires: 86400 } // auto delete after 24 hours in seconds until user's email is verified
     },
     { timestamps: true}

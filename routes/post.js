@@ -64,57 +64,26 @@ router.get('/:postId', async (req, res)=>{
     }
 })
 
-// get posts by pageNumber , limit
-// router.get('/', async(req, res)=>{
-//     const userId = req.query.userId
-//     const page = parseInt(req.query.page)
-//     const limit = parseInt(req.query.limit)
-//     const isApproved = req.query.isApproved==='true'?true:false
-//     const isPosted = req.query.isPosted==='true'?true:false
-//     try {
-//         const posts = await Post.find({
-//             $and: [
-//                 userId ? {authorId: userId}:{},
-//                 isApproved ? {isApproved: isApproved}:{},
-//                 isPosted ? {isPosted: isPosted}:{},
-//             ]
-//         }).populate({path:'authorId'}).sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit)
 
-//         const totalPosts = await Post.countDocuments({
-//             $and: [
-//                 userId ? {authorId: userId}:{},
-//                 isApproved ? {isApproved: isApproved}:{},
-//                 isPosted ? {isPosted: isPosted}:{},
-//             ]
-//         }) 
-
-//         const totalPage = Math.ceil(totalPosts/limit)
-//         const hasNext = page*limit < totalPosts ? true : false
-//         res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
-//              totalPosts: totalPosts, hasNext: hasNext})
-//     } catch(err) {
-//         console.log('err while fetching post',err)
-//     }
-// })
-
-
-// get posts by pageNumber , limit and trending 
+// get posts by pageNumber ,category, limit and mostView 
 router.get('/', async(req, res)=>{
     const userId = req.query.userId
     const page = parseInt(req.query.page)
     const limit = parseInt(req.query.limit)
+    const category = req.query.category
     const isApproved = req.query.isApproved==='true'?true:false
     const isPosted = req.query.isPosted==='true'?true:false
     const mostWatch = req.query.mostWatch==='true'? true : false
     try {
         if(mostWatch){
             const oneWeekAgo = new Date()
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7 )
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 360 )
             const posts = await Post.find({
                 $and: [
                     { createdAt: { $gte: oneWeekAgo } },
                     isApproved ? {isApproved: isApproved}:{},
                     isPosted ? {isPosted: isPosted}:{},
+                    category? {category: category}:{}
                 ]
             }).populate({path:'authorId'}).sort({ view: -1 }).skip((page-1)*limit).limit(limit)
 
@@ -123,6 +92,7 @@ router.get('/', async(req, res)=>{
                     userId ? {authorId: userId}:{},
                     isApproved ? {isApproved: isApproved}:{},
                     isPosted ? {isPosted: isPosted}:{},
+                    category ? {category: category}: {}
                 ]
             }) 
     
@@ -136,6 +106,7 @@ router.get('/', async(req, res)=>{
                     userId ? {authorId: userId}:{},
                     isApproved ? {isApproved: isApproved}:{},
                     isPosted ? {isPosted: isPosted}:{},
+                    category ? {category: category}: {}
                 ]
             }).populate({path:'authorId'}).sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit)
 
@@ -144,6 +115,7 @@ router.get('/', async(req, res)=>{
                     userId ? {authorId: userId}:{},
                     isApproved ? {isApproved: isApproved}:{},
                     isPosted ? {isPosted: isPosted}:{},
+                    category ? {category: category}: {}
                 ]
             }) 
     
@@ -167,6 +139,29 @@ router.get('/:postId/increase-view', async( req, res)=>{
         post.save()
         res.status(200).json({message:'increased view number successfully'})
     }catch(err){}   
+})
+
+// get postNumber
+router.get('/post-number/:title', async(req, res)=>{
+    const title  = req.params.title
+    try {     
+        const totalPosts = await Post.countDocuments({category: title})       
+        res.status(200).json({message:'get posts number successfully', totalPosts: totalPosts})
+              
+    } catch(err) {
+        console.log('err while fetching post',err)
+    }
+})
+
+//get latest post base on category
+router.get('/latest-post/:category', async(req, res)=>{
+    try {
+        const latestPost = await Post.find({category:req.params.category}).sort({createdAt:-1}).limit(1).populate('authorId','_id username img')
+        res.status(200).json({message:'get latest post successfully', latestPost: latestPost})
+    } catch(err){   
+        console.log('fetch latest post failed ', err)
+        
+    }
 })
 
 module.exports = router

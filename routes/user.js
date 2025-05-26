@@ -80,6 +80,16 @@ router.get('/', async(req, res)=>{
     }
 })
 
+// get user info
+router.get('/:userId', async( req , res ) =>{
+    try {
+        const user = await User.findById(req.params.userId)       
+        const {password,...other} = user._doc
+        return res.status(200).json({message: "get user successfully",user: other})
 
+    }catch(err){
+        res.status(400).json({message:'user not exists'})
+    }
+})
 
 module.exports = router

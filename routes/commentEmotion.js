@@ -48,6 +48,19 @@ router.get('/:commentId', async (req,res) => {
     }
 })
 
+//get comment emoiton by userId
+
+router.get('/emotion-count/:userId', async (req,res) => {
+    const userId = req.params.userId;
+    try {
+        const emotionCount = await CommentEmotion.countDocuments({userId: userId})
+        res.status(200).json({message:'fetch emotion count successfully', emotionCount: emotionCount})
+    } catch(err){
+        console.log('fetch emotion count by userId failed',err)
+    }
+
+})
+
 
 
 

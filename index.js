@@ -117,7 +117,8 @@ app.get("/auth/user", async (req, res) => {
                     email: req.user.emails[0].value,
                     password: password,
                     img: req.user.photos[0].value || '',
-                    verified: true,
+                    verified: false,
+                    emailVerified: true,
                     autoDelete: null
                 });
             // create new user
