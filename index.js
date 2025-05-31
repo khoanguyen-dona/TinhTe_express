@@ -21,13 +21,15 @@ const commentRoute = require('./routes/comment')
 const reportCommentRoute = require('./routes/reportComment')
 const commentEmotionRoute = require('./routes/commentEmotion')
 const postEmotionRoute = require('./routes/postEmotion')
+const chatRoute = require('./routes/chat')
+const messageRoute = require('./routes/message')
 
 mongoose.connect(process.env.MONGO_DB)
         .then(() => console.log("DB connect successfully"))
         .catch((err) => console.log(err))
 
 app.use(cors({
-    origin: `${process.env.FRONT_END_URL}`,
+    origin: [`${process.env.FRONT_END_URL}`,`${process.env.FRONT_END_URL2}`],
     credentials: true,
 }));
 app.use(express.json());
@@ -41,6 +43,10 @@ app.use('/api/comment', commentRoute)
 app.use ('/api/report-comment', reportCommentRoute)
 app.use('/api/comment-emotion', commentEmotionRoute)
 app.use('/api/post-emotion', postEmotionRoute)
+app.use('/api/chat', chatRoute )
+app.use('/api/message', messageRoute)
+
+
 // Session setup
 app.use(
     session({
