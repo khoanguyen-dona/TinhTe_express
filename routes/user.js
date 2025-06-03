@@ -92,4 +92,29 @@ router.get('/:userId', async( req , res ) =>{
     }
 })
 
+// get user by username
+router.get('/username/:username', async(req, res)=>{
+    const limit = parseInt(req.query.limit)
+    const page = parseInt(req.query.page)
+    const username  = req.params.username
+
+    try {     
+        const users = await User.find({
+            username: { $regex: username, $options: 'i' }         
+        }).skip( limit*(page-1) ).limit(limit)
+
+        const totalUser = await User.countDocuments({
+            username: { $regex: username, $options: 'i' } 
+        })
+        const totalPage = Math.ceil(totalUser/limit)
+        const hasNext = parseInt(limit*page) < totalUser ? true : false
+        
+        res.status(200).json({message:'get users by username successfully',
+            users: users, page: page, limit: limit, totalUserFound: totalUser, hasNext: hasNext, totalPage: totalPage})
+                       
+    } catch(err) {
+        console.log('err while fetching users by username',err)
+    }
+})
+
 module.exports = router

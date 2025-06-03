@@ -164,4 +164,29 @@ router.get('/latest-post/:category', async(req, res)=>{
     }
 })
 
+// get post by title
+router.get('/post-title/:title', async(req, res)=>{
+    const limit = parseInt(req.query.limit)
+    const page = parseInt(req.query.page)
+    const title  = req.params.title
+
+    try {     
+        const posts = await Post.find({
+            title: { $regex: title, $options: 'i' }         
+        }).skip( limit*(page-1) ).limit(limit).populate('authorId','-password')
+
+        const totalPosts = await Post.countDocuments({
+            title: { $regex: title, $options: 'i' } 
+        })
+        const totalPage = Math.ceil(totalPosts/limit)
+        const hasNext = parseInt(limit*page) < totalPosts ? true : false
+        
+        res.status(200).json({message:'get posts by title successfully',
+             posts: posts, page: page, limit: limit, totalPostsFound: totalPosts, hasNext: hasNext, totalPage: totalPage})
+                       
+    } catch(err) {
+        console.log('err while fetching posts by title',err)
+    }
+})
+
 module.exports = router

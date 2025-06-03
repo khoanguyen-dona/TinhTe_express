@@ -34,6 +34,8 @@ router.get('/:chatId', async(req,res)=>{
 
 //get chats of user by userId
 router.get('/chat-list/:userId', async(req, res)=>{
+    const page = parseInt(req.query.page)
+    const limit = parseInt(req.query.limit)
     try{
         const chatlist = await Chat.find({
             $and:[
@@ -43,8 +45,21 @@ router.get('/chat-list/:userId', async(req, res)=>{
                 {$expr: { 
                     $gt: [{ $strLenCP: '$lastMessage' }, 0] }}
             ]
-        }).sort({updatedAt: -1})
-        res.status(200).json({message:'get chatlist sucessfully', chatList: chatlist})
+        }).sort({updatedAt: -1}).skip( limit*(page-1) ).limit(limit)
+
+        const totalChat = await Chat.countDocuments({
+            $and:[
+                {members: {
+                    $in: [req.params.userId]
+                }},
+                {$expr: { 
+                    $gt: [{ $strLenCP: '$lastMessage' }, 0] }}
+            ]
+        })
+        
+        const hasNext = parseInt(limit*page) < totalChat ? true : false
+
+        res.status(200).json({message:'get chatlist sucessfully', chatList: chatlist, page: page, limit: limit, totalChatFound: totalChat ,hasNext: hasNext })
     }catch(err){
         console.log("get chatlist failed",err)
     }

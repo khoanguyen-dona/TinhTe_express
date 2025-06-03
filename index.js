@@ -24,6 +24,27 @@ const postEmotionRoute = require('./routes/postEmotion')
 const chatRoute = require('./routes/chat')
 const messageRoute = require('./routes/message')
 
+// multithread
+// const cluster = require('cluster');
+// const app = express()
+// const os = require('os');
+
+// if (cluster.isMaster) {
+//   const cpuCount = os.cpus().length;
+//   for (let i = 0; i < cpuCount; i++) {
+//     cluster.fork();
+//   }
+// } else {
+//   app.listen(process.env.PORT ,() => {
+//     console.log('backend is running on port:',process.env.PORT,`processId: ${process.pid}`);
+//   } )
+// }
+
+app.listen(process.env.PORT ,() => {
+  console.log('backend is running on port:',process.env.PORT);
+} )
+
+
 mongoose.connect(process.env.MONGO_DB)
         .then(() => console.log("DB connect successfully"))
         .catch((err) => console.log(err))
@@ -161,6 +182,6 @@ app.get("/auth/logout", (req, res) => {
     });
 });
 
-app.listen(process.env.PORT ,() => {
-    console.log('backend is running on port:',process.env.PORT);
-} )
+// app.listen(process.env.PORT ,() => {
+//     console.log('backend is running on port:',process.env.PORT);
+// } )
