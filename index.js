@@ -1,6 +1,4 @@
 const User = require('./models/User')
-
-
 const bodyParser = require('body-parser');
 const jwt = require("jsonwebtoken");
 const password_generator = require('password-generator')
@@ -23,7 +21,7 @@ const commentEmotionRoute = require('./routes/commentEmotion')
 const postEmotionRoute = require('./routes/postEmotion')
 const chatRoute = require('./routes/chat')
 const messageRoute = require('./routes/message')
-
+const redisRoute = require('./routes/redis')
 // multithread
 // const cluster = require('cluster');
 // const app = express()
@@ -66,6 +64,7 @@ app.use('/api/comment-emotion', commentEmotionRoute)
 app.use('/api/post-emotion', postEmotionRoute)
 app.use('/api/chat', chatRoute )
 app.use('/api/message', messageRoute)
+app.use('/api/redis', redisRoute)
 
 
 // Session setup
