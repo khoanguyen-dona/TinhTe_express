@@ -11,7 +11,7 @@ const dotenv = require('dotenv')
 dotenv.config()
 const app = express()
 const mongoose = require('mongoose')
-
+const axios = require('axios')
 const postRoute = require('./routes/post')
 const authRoute = require('./routes/auth')
 const userRoute = require('./routes/user')
@@ -21,7 +21,8 @@ const commentEmotionRoute = require('./routes/commentEmotion')
 const postEmotionRoute = require('./routes/postEmotion')
 const chatRoute = require('./routes/chat')
 const messageRoute = require('./routes/message')
-const redisRoute = require('./routes/redis')
+const redisRoute = require('./routes/redis');
+const Chat = require('./models/Chat');
 // multithread
 // const cluster = require('cluster');
 // const app = express()
@@ -116,13 +117,17 @@ app.get(
 "/auth/google/callback",
 passport.authenticate("google", { failureRedirect: "/" }),
 (req, res) => {
-    res.redirect(`${process.env.FRONT_END_URL}?googleAuth=true`);
+    // res.redirect(`${process.env.FRONT_END_URL}?googleAuth=true`);
+    res.redirect(`${process.env.FRONT_END_URL}/loading-resources`);
+
 }
 );
   
 // User Info Route
 app.get("/auth/user", async (req, res) => {
     if (req.user) {
+        let limit= parseInt(10)
+        let page = parseInt(1)
         const existedUser = await User.findOne({email: req.user.emails[0].value})
         if(existedUser){
             const accessToken = jwt.sign(
@@ -134,8 +139,21 @@ app.get("/auth/user", async (req, res) => {
                         process.env.JWT_SECRET_KEY,
                         // {expiresIn:"1m"}
                         );
-            const { password, ...others} = existedUser._doc
-            res.status(200).json({user: others, accessToken: accessToken})
+
+            const chatList = await Chat.find({
+                        $and:[
+                            {members: {
+                                $in: [String(existedUser._id)]
+                            }},
+                            {$expr: { 
+                                $gt: [{ $strLenCP: '$lastMessage' }, 0] }}
+                        ]
+                    }).sort({updatedAt: -1}).skip( limit*(page-1) ).limit(limit)
+            if(chatList){
+
+              const { password, ...others} = existedUser._doc 
+              res.status(200).json({user: others, accessToken: accessToken, chatList: chatList })
+            }
         } else {
                 const password = password_generator( 12 ,false )
                 const newUser = new User({

@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const Post = require('../models/Post')
-const { createSearchIndex } = require('../models/User')
+
 
 //create post
 router.post('', async( req , res ) =>{
