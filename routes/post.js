@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const Post = require('../models/Post')
-
+const  redis = require('../config/redis');
 
 //create post
 router.post('', async( req , res ) =>{
@@ -76,53 +76,80 @@ router.get('/', async(req, res)=>{
     const mostWatch = req.query.mostWatch==='true'? true : false
     try {
         if(mostWatch){
-            const oneWeekAgo = new Date()
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 360 )
-            const posts = await Post.find({
-                $and: [
-                    { createdAt: { $gte: oneWeekAgo } },
-                    isApproved ? {isApproved: isApproved}:{},
-                    isPosted ? {isPosted: isPosted}:{},
-                    category? {category: category}:{}
-                ]
-            }).populate({path:'authorId'}).sort({ view: -1 }).skip((page-1)*limit).limit(limit)
+            const trendingPosts = await redis.lRange('trendingPosts', 0, -1)
 
-            const totalPosts = await Post.countDocuments({
-                $and: [
-                    userId ? {authorId: userId}:{},
-                    isApproved ? {isApproved: isApproved}:{},
-                    isPosted ? {isPosted: isPosted}:{},
-                    category ? {category: category}: {}
-                ]
-            }) 
-    
-            const totalPage = Math.ceil(totalPosts/limit)
-            const hasNext = page*limit < totalPosts ? true : false
-            res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
-                 totalPosts: totalPosts, hasNext: hasNext})
+            if(trendingPosts.length > 0){
+                res.status(200).json({message:'get trending posts successfully from cached', posts: JSON.parse(trendingPosts)})
+            } else {        
+                const oneWeekAgo = new Date()
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 360 )
+                const posts = await Post.find({
+                    $and: [
+                        { createdAt: { $gte: oneWeekAgo } },
+                        isApproved ? {isApproved: isApproved}:{},
+                        isPosted ? {isPosted: isPosted}:{},
+                        category? {category: category}:{}
+                    ]
+                }).populate({path:'authorId'}).sort({ view: -1 }).skip((page-1)*limit).limit(limit)
+
+                const totalPosts = await Post.countDocuments({
+                    $and: [
+                        userId ? {authorId: userId}:{},
+                        isApproved ? {isApproved: isApproved}:{},
+                        isPosted ? {isPosted: isPosted}:{},
+                        category ? {category: category}: {}
+                    ]
+                }) 
+        
+                const totalPage = Math.ceil(totalPosts/limit)
+                const hasNext = page*limit < totalPosts ? true : false
+                // push to redis
+                await redis.lPush('trendingPosts',JSON.stringify(posts))
+                await redis.expire('trendingPosts', 43200) //cached 12 hours 
+
+                res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
+                    totalPosts: totalPosts, hasNext: hasNext})
+            }
         } else{
-            const posts = await Post.find({
-                $and: [
-                    userId ? {authorId: userId}:{},
-                    isApproved ? {isApproved: isApproved}:{},
-                    isPosted ? {isPosted: isPosted}:{},
-                    category ? {category: category}: {}
-                ]
-            }).populate({path:'authorId'}).sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit)
 
-            const totalPosts = await Post.countDocuments({
-                $and: [
-                    userId ? {authorId: userId}:{},
-                    isApproved ? {isApproved: isApproved}:{},
-                    isPosted ? {isPosted: isPosted}:{},
-                    category ? {category: category}: {}
-                ]
-            }) 
-    
-            const totalPage = Math.ceil(totalPosts/limit)
-            const hasNext = page*limit < totalPosts ? true : false
-            res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
-                 totalPosts: totalPosts, hasNext: hasNext})
+            const homePosts = await redis.json.get('homePosts', { path: '$'})
+  
+            if(homePosts){
+                res.status(200).json(homePosts[0])
+            } else {          
+                const posts = await Post.find({
+                    $and: [
+                        userId ? {authorId: userId}:{},
+                        isApproved ? {isApproved: isApproved}:{},
+                        isPosted ? {isPosted: isPosted}:{},
+                        category ? {category: category}: {}
+                    ]
+                }).populate({path:'authorId'}).sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit)
+
+                const totalPosts = await Post.countDocuments({
+                    $and: [
+                        userId ? {authorId: userId}:{},
+                        isApproved ? {isApproved: isApproved}:{},
+                        isPosted ? {isPosted: isPosted}:{},
+                        category ? {category: category}: {}
+                    ]
+                }) 
+        
+                const totalPage = Math.ceil(totalPosts/limit)
+                const hasNext = page*limit < totalPosts ? true : false
+                // push to redis
+                await redis.json.set('homePosts','$', {
+                    message:'get posts successfully from cached',
+                    posts: posts,
+                    totalPage: totalPage,
+                    totalPosts: totalPosts,
+                    hasNext: hasNext
+                })
+                await redis.expire('homePosts',10)
+
+                res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
+                    totalPosts: totalPosts, hasNext: hasNext})
+            }
         }
 
         
