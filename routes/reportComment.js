@@ -1,9 +1,11 @@
 const router = require('express').Router()
 const ReportComment = require('../models/ReportComment')
-
+const {
+    isAuthenticated,
+} = require('./verifyToken')
 
 //create report comment
-router.post('/', async( req , res ) =>{
+router.post('/', isAuthenticated, async( req , res ) =>{
     try{
         const Reported = await ReportComment.find({
             $and: [
@@ -24,7 +26,7 @@ router.post('/', async( req , res ) =>{
     }
 })
 
-// get report comment by postId and 
+// get report comment by postId and userId
 router.get('/', async(req,res)=>{
     const postId = req.query.postId
     const userId = req.query.userId

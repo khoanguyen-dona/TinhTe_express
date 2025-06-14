@@ -1,9 +1,12 @@
 const router = require('express').Router()
 const Message = require('../models/Message')
-
+const {
+    isAuthenticated,
+    isRelatedToChatByChatId
+} = require('./verifyToken')
 
 //create message
-router.post('/', async(req, res)=>{
+router.post('/', isAuthenticated, async(req, res)=>{
     try {
         const newMessage = new Message(req.body)
         newMessage.save()
@@ -15,7 +18,7 @@ router.post('/', async(req, res)=>{
 
 
 //get messages by chatId ,limit and page
-router.get('/', async(req,res)=>{
+router.get('/' , isRelatedToChatByChatId, async(req,res)=>{
     const page = req.query.page
     const limit = req.query.limit
     const chatId = req.query.chatId

@@ -1,9 +1,14 @@
 const router = require('express').Router()
 const Chat = require('../models/Chat')
-
+const {
+    isRelatedToChatByChatId,
+    isRelatedToChatByUserId,
+    isOwnerOfChatList,
+    isAuthenticated,
+} = require('./verifyToken')
 
 // create a chat between 2 user
-router.post('/', async(req, res)=>{
+router.post('/', isAuthenticated, async(req, res)=>{
     try {
         const members = req.body.members
         const findChat = await Chat.findOne({
@@ -23,7 +28,7 @@ router.post('/', async(req, res)=>{
 })
 
 // get a chat by chatId
-router.get('/:chatId', async(req,res)=>{
+router.get('/:chatId' , isRelatedToChatByChatId, async(req, res)=>{
     try {
         const chat = await Chat.findById(req.params.chatId)
         res.status(200).json({message:'get chat by chatId successfully', chat: chat})
@@ -33,7 +38,7 @@ router.get('/:chatId', async(req,res)=>{
 })
 
 //get chats of user by userId
-router.get('/chat-list/:userId', async(req, res)=>{
+router.get('/chat-list/:userId', isOwnerOfChatList, async(req, res)=>{
     const page = parseInt(req.query.page)
     const limit = parseInt(req.query.limit)
     try{
@@ -65,8 +70,9 @@ router.get('/chat-list/:userId', async(req, res)=>{
     }
 })
 
+//
 //get chat of 2 members by 2 userId
-router.get('/', async(req,res)=>{
+router.get('/', isRelatedToChatByUserId, async(req,res)=>{
     try {
         const chat = await Chat.findOne({
             members: {
@@ -83,8 +89,9 @@ router.get('/', async(req,res)=>{
     }
 })
 
+//
 //update to chat by chatId
-router.put('/:chatId', async(req,res)=>{
+router.put('/:chatId', isRelatedToChatByChatId, async(req,res)=>{
     try {
         const updatedChat = await Chat.findByIdAndUpdate(req.params.chatId, {
             $set: req.body

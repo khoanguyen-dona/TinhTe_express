@@ -1,10 +1,12 @@
 const router = require('express').Router()
 const Comment = require('../models/Comment')
-
+const {
+    isAuthenticated,
+} = require('./verifyToken')
 
 
 // create comment
-router.post('/', async( req , res ) =>{
+router.post('/', isAuthenticated, async( req , res ) =>{
     try{
         const newComment = new Comment(req.body)
         await newComment.save()

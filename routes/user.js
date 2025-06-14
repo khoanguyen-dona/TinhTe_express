@@ -1,8 +1,14 @@
 const router = require('express').Router()
 const User = require('../models/User')
+const {
+    isAuthenticated,
+    isAdmin,
+    isAccountOwner
+} = require('./verifyToken')
+
 
 // update user info
-router.put('/:userId', async( req , res ) =>{
+router.put('/:userId', isAccountOwner, async( req , res ) =>{
     try {
         const user = await User.findById(req.params.userId)
         if(!user){
@@ -23,7 +29,7 @@ router.put('/:userId', async( req , res ) =>{
 })
 
 // update password
-router.put('/:userId/update-password', async( req , res ) =>{
+router.put('/:userId/update-password', isAccountOwner, async( req , res ) =>{
     try {
         const user = await User.findById(req.params.userId)
         if(!user){
@@ -51,7 +57,7 @@ router.put('/:userId/update-password', async( req , res ) =>{
 })
 
 //get all users by page and limit 
-router.get('/', async(req, res)=>{
+router.get('/', isAdmin, async(req, res)=>{
     const page = parseInt(req.query.page)
     const limit = parseInt(req.query.limit)
     const isReporter = req.query.isReporter==='true'?true:false

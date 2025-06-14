@@ -40,7 +40,7 @@ router.post('/login', async( req , res ) =>{
         
         const {password, ...rest} = user._doc
         
-        res.status(200).json({data: rest,token: accessToken, message:"user login successfully"})
+        res.status(200).json({data: rest, accessToken: accessToken, message:"user login successfully"})
         
     } catch(err){
         console.log('err while create user',err)

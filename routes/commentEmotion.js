@@ -1,9 +1,11 @@
 const router = require('express').Router()
 const CommentEmotion = require('../models/CommentEmotion')
-
+const {
+    isAuthenticated,
+} = require('./verifyToken')
 
 // create comment emotion
-router.post('/', async(req, res)=>{
+router.post('/', isAuthenticated, async(req, res)=>{
     try {
         const emotion = await CommentEmotion.findOne({
             $and:[

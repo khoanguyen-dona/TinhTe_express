@@ -1,9 +1,15 @@
 const router = require('express').Router()
 const Post = require('../models/Post')
 const  redis = require('../config/redis');
+const {
+    isAuthenticated,
+    isPostAuthor,
+    isAdmin,
+} = require('./verifyToken')
+
 
 //create post
-router.post('', async( req , res ) =>{
+router.post('', isAuthenticated,async( req , res ) =>{
     try {
         const newPost = await Post({
             title: req.body.title,
@@ -25,7 +31,7 @@ router.post('', async( req , res ) =>{
 })
 
 // update post
-router.put('/:postId', async( req, res) => {
+router.put('/:postId', isPostAuthor, async( req, res) => {
     try {
         const updatedPost = await Post.findByIdAndUpdate(req.params.postId,
             {
@@ -43,7 +49,7 @@ router.put('/:postId', async( req, res) => {
 
 
 //delete post by postId
-router.delete('/:postId', async( req, res) => {
+router.delete('/:postId', isPostAuthor, async( req, res) => {
     try {
         await Post.findByIdAndDelete(req.params.postId)
         res.status(200).json({message: 'Delete post successfully'}) 
@@ -90,7 +96,7 @@ router.get('/', async(req, res)=>{
                         isPosted ? {isPosted: isPosted}:{},
                         category? {category: category}:{}
                     ]
-                }).populate({path:'authorId'}).sort({ view: -1 }).skip((page-1)*limit).limit(limit)
+                }).populate('authorId','-password').sort({ view: -1 }).skip((page-1)*limit).limit(limit)
 
                 const totalPosts = await Post.countDocuments({
                     $and: [
@@ -108,15 +114,15 @@ router.get('/', async(req, res)=>{
                 await redis.expire('trendingPosts', 43200) //cached 12 hours 
 
                 res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
-                    totalPosts: totalPosts, hasNext: hasNext})
+                    totalPosts: totalPosts, hasNext: hasNext, limit: limit, page: page})
             }
         } else{
 
-            const homePosts = await redis.json.get('homePosts', { path: '$'})
+            // const homePosts = await redis.json.get('homePosts', { path: '$'})
   
-            if(homePosts){
-                res.status(200).json(homePosts[0])
-            } else {          
+            // if(homePosts){
+            //     res.status(200).json(homePosts[0])
+            // } else {          
                 const posts = await Post.find({
                     $and: [
                         userId ? {authorId: userId}:{},
@@ -124,7 +130,7 @@ router.get('/', async(req, res)=>{
                         isPosted ? {isPosted: isPosted}:{},
                         category ? {category: category}: {}
                     ]
-                }).populate({path:'authorId'}).sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit)
+                }).populate('authorId','-password').sort({ createdAt: -1 }).skip((page-1)*limit).limit(limit)
 
                 const totalPosts = await Post.countDocuments({
                     $and: [
@@ -138,18 +144,18 @@ router.get('/', async(req, res)=>{
                 const totalPage = Math.ceil(totalPosts/limit)
                 const hasNext = page*limit < totalPosts ? true : false
                 // push to redis
-                await redis.json.set('homePosts','$', {
-                    message:'get posts successfully from cached',
-                    posts: posts,
-                    totalPage: totalPage,
-                    totalPosts: totalPosts,
-                    hasNext: hasNext
-                })
-                await redis.expire('homePosts',10)
+                // await redis.json.set('homePosts','$', {
+                //     message:'get posts successfully from cached',
+                //     posts: posts,
+                //     totalPage: totalPage,
+                //     totalPosts: totalPosts,
+                //     hasNext: hasNext
+                // })
+                // await redis.expire('homePosts',10)
 
                 res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
-                    totalPosts: totalPosts, hasNext: hasNext})
-            }
+                    totalPosts: totalPosts, hasNext: hasNext, limit: limit, page: page})
+            // }
         }
 
         

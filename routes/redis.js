@@ -4,29 +4,33 @@ const  redis = require('../config/redis');
 //get current onlineUsers 
 router.get('/all-users', async(req, res)=>{
     try {
-        // find online users in redis if it already in redis
-        const onlineUsers = await redis.lRange('onlineUsers', 0, -1)    
-        if(onlineUsers.length> 0 ){
-            res.status(200).json({message:'get online users successfully from cached!', onlineUsers: JSON.parse(onlineUsers)})
+          // find onlineUsers in redis if it has return the result
+          const onlineUsers = await redis.lRange('onlineUsers', 0, -1)
+          if( onlineUsers.length > 0 ){          
+            res.status(200).json({message:'get onlineUsers successfully from cached', onlineUsers: JSON.parse(onlineUsers)})
+          
+               
+        //  if it not existed in redis 
+          } else {
 
-         // if it not existed in redis 
-        } else {
-
-            const users = []
-            const onlineUsers = []
-            const userKeys = await redis.keys('userId:*')
-            for( const key of userKeys ){
-                let data = await redis.hGetAll(key)
-                users.push(data)
+            const pipeline = redis.multi() 
+            const onlineUserIds = await redis.sMembers('onlineUserIds')
+            if( onlineUserIds.length > 0 ){
+              for( const user of onlineUserIds ){
+                const userId = user.split(':')[1]
+                pipeline.hGetAll(`userId:${userId}`)
+              }
+              const onlineUsers = await pipeline.exec()
+              // save onlineUsers  to redis
+              await redis.lPush('onlineUsers', JSON.stringify(onlineUsers) )
+              await redis.expire('onlineUsers', 10)
+              res.status(200).json({message:'get onlineUsers successfully', onlineUsers: onlineUsers})
             }
-
-            users.filter((user)=>user.status==='online'? onlineUsers.push({userId: user.userId, username: user.username , avatar: user.avatar}) : '' )
-            
-            // push to redis
-            await redis.lPush('onlineUsers',JSON.stringify(onlineUsers))
-            await redis.expire('onlineUsers',10)
-            res.status(200).json({message:'get users successfully', onlineUsers: onlineUsers})
+         
         }
+     
+
+      
     } catch(err){
         console.log('create message failed',err)
     }
