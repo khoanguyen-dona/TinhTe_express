@@ -1,20 +1,61 @@
 const jwt = require('jsonwebtoken')
 const Post = require('../models/Post')
 const Chat = require('../models/Chat')
+const  redis = require('../config/redis');
 
-const verifyToken = (req, res, next) => {
+
+const verifyToken = async (req, res, next) => {
     const authHeader = req.headers.token
     if (authHeader) { 
-        const token = authHeader.split(" ")[1]    
-        jwt.verify(token, process.env.JWT_SECRET_KEY, (err, user) => {
-            if (err) return res.status(403).json({message: 'Token is not valid'});
-            req.user = user;        
-            next();
-        });
+        const token = authHeader.split(" ")[1]   
+        
+        // find decodedToken in redis
+        const decodedToken =  await redis.get(`decodedToken:${token}`)
+
+        // if existed in redis simply set req.user 
+        if (decodedToken!==null){
+            console.log('take decodeToken from redis')
+            req.user = JSON.parse(decodedToken)
+
+            next()
+        // if not then decoded it then set req.user
+        } else {
+            jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, user) => {
+                if (err) {
+                    if(err.name==='TokenExpiredError'){
+                        return res.status(401).json({message:'token expired'})
+                    }
+                    return res.status(403).json({message: 'Token is not valid'});  
+                } 
+                req.user = user
+
+                // up to redis      
+                await redis.setEx(`decodedToken:${token}`, 86400 , JSON.stringify(user) )                                      
+                next();
+            });
+        }
     } else {
         return res.status(401).json("You are not authenticated!");
     }
 };
+
+
+// const verifyToken = async (req, res, next) => {
+//     const authHeader = req.headers.token
+//     if (authHeader) { 
+//         const token = authHeader.split(" ")[1]   
+      
+//         jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, user) => {
+//             if (err) return res.status(403).json({message: 'Token is not valid'});
+//             req.user = user;         
+//             next();  
+//         })
+
+//     } else {
+//         return res.status(401).json("You are not authenticated!");
+//     }
+// };
+
 
 const isAuthenticated = (req, res, next) => {
     verifyToken(req, res, () => {
@@ -27,7 +68,7 @@ const isAuthenticated = (req, res, next) => {
 }
 
 const isAdmin = (req, res, next) => {
-    console.log('it run')
+
     verifyToken(req, res, () => {
         if (req.user.isAdmin) {
             next();
