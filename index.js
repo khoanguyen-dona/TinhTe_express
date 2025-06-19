@@ -1,3 +1,4 @@
+const Chat = require('./models/Chat');
 const User = require('./models/User')
 const bodyParser = require('body-parser');
 const jwt = require("jsonwebtoken");
@@ -22,7 +23,7 @@ const postEmotionRoute = require('./routes/postEmotion')
 const chatRoute = require('./routes/chat')
 const messageRoute = require('./routes/message')
 const redisRoute = require('./routes/redis');
-const Chat = require('./models/Chat');
+const notificationRoute = require('./routes/notification');
 // multithread
 // const cluster = require('cluster');
 // const app = express()
@@ -66,7 +67,7 @@ app.use('/api/post-emotion', postEmotionRoute)
 app.use('/api/chat', chatRoute )
 app.use('/api/message', messageRoute)
 app.use('/api/redis', redisRoute)
-
+app.use('/api/notification', notificationRoute)
 
 // Session setup
 app.use(

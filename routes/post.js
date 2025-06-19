@@ -86,7 +86,8 @@ router.get('/', async(req, res)=>{
 
             if(trendingPosts.length > 0){
                 res.status(200).json({message:'get trending posts successfully from cached', posts: JSON.parse(trendingPosts)})
-            } else {        
+            } else 
+            {        
                 const oneWeekAgo = new Date()
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 360 )
                 const posts = await Post.find({
@@ -110,8 +111,8 @@ router.get('/', async(req, res)=>{
                 const totalPage = Math.ceil(totalPosts/limit)
                 const hasNext = page*limit < totalPosts ? true : false
                 // push to redis
-                await redis.lPush('trendingPosts',JSON.stringify(posts))
-                await redis.expire('trendingPosts', 43200) //cached 12 hours 
+                // await redis.lPush('trendingPosts',JSON.stringify(posts))
+                // await redis.expire('trendingPosts', 43200) //cached 12 hours 
 
                 res.status(200).json({message:'get posts successfully', posts: posts, totalPage: totalPage,
                     totalPosts: totalPosts, hasNext: hasNext, limit: limit, page: page})

@@ -7,7 +7,7 @@ router.get('/all-users', async(req, res)=>{
           // find onlineUsers in redis if it has return the result
           const onlineUsers = await redis.lRange('onlineUsers', 0, -1)
           if( onlineUsers.length > 0 ){          
-            res.status(200).json({message:'get onlineUsers successfully from cached', onlineUsers: JSON.parse(onlineUsers)})
+            res.status(200).json({message:'get onlineUsers successfully from cached', onlineUsers: JSON.parse(onlineUsers) })
           
                
         //  if it not existed in redis 
@@ -22,8 +22,10 @@ router.get('/all-users', async(req, res)=>{
               }
               const onlineUsers = await pipeline.exec()
               // save onlineUsers  to redis
-              await redis.lPush('onlineUsers', JSON.stringify(onlineUsers) )
-              await redis.expire('onlineUsers', 10)
+              const pipeline2 = redis.multi() 
+              pipeline2.lPush('onlineUsers', JSON.stringify(onlineUsers) )
+              pipeline2.expire('onlineUsers', 10)
+              await pipeline2.exec()
               res.status(200).json({message:'get onlineUsers successfully', onlineUsers: onlineUsers})
             }
          

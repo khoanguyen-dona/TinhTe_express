@@ -90,6 +90,16 @@ router.get('/refCommentId/:commentId/replyNumber',  async (req, res) => {
     }
 } )
 
+//get comment by commentId
+router.get('/commentId/:commentId', async(req, res)=>{
+    try{
+        const comment = await Comment.findById(req.params.commentId).populate('userId','-password')
+        res.status(200).json({message:'get comment successfully', comment: comment})
+    } catch(err){
+        console.log('fetching comment failed',err)
+    }
+})
+
 
 // get commentCount base on post
 router.get('/comment-count/:postId', async(req, res)=>{
