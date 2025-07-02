@@ -4,7 +4,6 @@ const  redis = require('../config/redis');
 const {
     isAuthenticated,
     isPostAuthor,
-    isAdmin,
 } = require('./verifyToken')
 
 

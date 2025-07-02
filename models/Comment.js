@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const CommentSchema = new mongoose.Schema(
     {
         postId: { type:String , required: true},
-        content: { type: String , required: true},
+        content: { type: String , required: false},
         userId: { type: Schema.Types.ObjectId, ref: 'User'},
         imgGallery: { type: Array},
         type: { 
