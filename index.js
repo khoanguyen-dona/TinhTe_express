@@ -150,48 +150,48 @@ app.get("/auth/user", async (req, res) => {
                   isReporter: existedUser.isReporter
               },
               process.env.JWT_SECRET_KEY,
-              {expiresIn:"30s"}
+              {expiresIn:"14d"}
             );
             
-            const refreshToken = jwt.sign(
-                {
-                    id: existedUser._id,
-                    isAdmin: existedUser.isAdmin,
-                    isReporter: existedUser.isReporter
-                },
-                process.env.REFRESH_SECRET_KEY,
-                {expiresIn:"2m"}
-            );
+            // const refreshToken = jwt.sign(
+            //     {
+            //         id: existedUser._id,
+            //         isAdmin: existedUser.isAdmin,
+            //         isReporter: existedUser.isReporter
+            //     },
+            //     process.env.REFRESH_SECRET_KEY,
+            //     {expiresIn:"2m"}
+            // );
 
             //save accessToken in redis
-            await redis.setEx(`accessToken:${accessToken}`, 30 , JSON.stringify({
+            await redis.setEx(`accessToken:${accessToken}`, 1209600 , JSON.stringify({
                 id: existedUser._id.toString(),
                 isAdmin: existedUser.isAdmin.toString(),
                 isReporter: existedUser.isReporter.toString()
             }) ) 
              
             //save refreshToken in redis
-            const pipeline = redis.multi() 
-            if(refreshToken){      
-              pipeline.hSet(`refreshToken:${refreshToken}`,{
-                    id: existedUser._id.toString(),
-                    isAdmin: existedUser.isAdmin.toString(),
-                    isReporter: existedUser.isReporter.toString()
-                } )  
-                pipeline.expire(`refreshToken:${refreshToken}`, 120)       
-                await pipeline.exec()
+            // const pipeline = redis.multi() 
+            // if(refreshToken){      
+            //   pipeline.hSet(`refreshToken:${refreshToken}`,{
+            //         id: existedUser._id.toString(),
+            //         isAdmin: existedUser.isAdmin.toString(),
+            //         isReporter: existedUser.isReporter.toString()
+            //     } )  
+            //     pipeline.expire(`refreshToken:${refreshToken}`, 120)       
+            //     await pipeline.exec()
       
     
-                // send cookie to client
-                res.cookie('refreshToken', refreshToken, {
-                    httpOnly: true, // RẤT QUAN TRỌNG: Không thể truy cập bằng JavaScript phía client
-                    secure: process.env.NODE_END === 'production' ? 'lax' : 'none', // Chỉ gửi qua HTTPS trong production
-                    sameSite: process.env.NODE_ENV === 'production' ? true : false , // Bảo vệ CSRF: 'strict', 'lax', or 'none'
-                    // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày tính bằng mili giây (phù hợp với expiresIn của token)
-                    maxAge: 2 * 60 * 1000, // 2 min  
-                    path: '/', // Cookie khả dụng trên tất cả các đường dẫn
-                });
-            }
+            //     // send cookie to client
+            //     res.cookie('refreshToken', refreshToken, {
+            //         httpOnly: true, // RẤT QUAN TRỌNG: Không thể truy cập bằng JavaScript phía client
+            //         secure: process.env.NODE_END === 'production' ? 'lax' : 'none', // Chỉ gửi qua HTTPS trong production
+            //         sameSite: process.env.NODE_ENV === 'production' ? true : false , // Bảo vệ CSRF: 'strict', 'lax', or 'none'
+            //         // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày tính bằng mili giây (phù hợp với expiresIn của token)
+            //         maxAge: 2 * 60 * 1000, // 2 min  
+            //         path: '/', // Cookie khả dụng trên tất cả các đường dẫn
+            //     });
+            // }
 
             const chatList = await Chat.find({
                         $and:[
@@ -232,50 +232,50 @@ app.get("/auth/user", async (req, res) => {
                         isReporter: savedUser.isReporter
                     },
                     process.env.JWT_SECRET_KEY,
-                    {expiresIn:"1d"}
+                    {expiresIn:"14d"}
                     );
                 const { password, ...others} = savedUser._doc
 
-                const refreshToken = jwt.sign(
-                  {
-                      id: savedUser._id,
-                      isAdmin: savedUser.isAdmin,
-                      isReporter: savedUser.isReporter
-                  },
-                  process.env.REFRESH_SECRET_KEY,
-                  {expiresIn:"2m"}
-              );
+              //   const refreshToken = jwt.sign(
+              //     {
+              //         id: savedUser._id,
+              //         isAdmin: savedUser.isAdmin,
+              //         isReporter: savedUser.isReporter
+              //     },
+              //     process.env.REFRESH_SECRET_KEY,
+              //     {expiresIn:"2m"}
+              //  );
 
               //save accessToken in redis
-              await redis.setEx(`accessToken:${accessToken}`, 30 , JSON.stringify({
+              await redis.setEx(`accessToken:${accessToken}`, 1209600 , JSON.stringify({
                 id: savedUser._id.toString(),
                 isAdmin: savedUser.isAdmin.toString(),
                 isReporter: savedUser.isReporter.toString()
               }) ) 
                
               //save refreshToken in redis
-              const pipeline = redis.multi() 
-              if(refreshToken){      
-                  pipeline.hSet(`refreshToken:${refreshToken}`,{
-                      id: savedUser._id.toString(),
-                      isAdmin: savedUser.isAdmin.toString(),
-                      isReporter: savedUser.isReporter.toString()
-                  } )  
+              // const pipeline = redis.multi() 
+              // if(refreshToken){      
+              //     pipeline.hSet(`refreshToken:${refreshToken}`,{
+              //         id: savedUser._id.toString(),
+              //         isAdmin: savedUser.isAdmin.toString(),
+              //         isReporter: savedUser.isReporter.toString()
+              //     } )  
                   
-                  pipeline.expire(`refreshToken:${refreshToken}`, 120)       
-                  await pipeline.exec()
+              //     pipeline.expire(`refreshToken:${refreshToken}`, 120)       
+              //     await pipeline.exec()
         
       
-                  // send cookie to client
-                  res.cookie('refreshToken', refreshToken, {
-                      httpOnly: true, // RẤT QUAN TRỌNG: Không thể truy cập bằng JavaScript phía client
-                      secure: process.env.NODE_ENV === 'production' ? true : false, // Chỉ gửi qua HTTPS trong production
-                      sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none', // Bảo vệ CSRF: 'strict', 'lax', or 'none'
-                      // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày tính bằng mili giây (phù hợp với expiresIn của token)
-                      maxAge: 2*60*1000, // 2 min
-                      path: '/', // Cookie khả dụng trên tất cả các đường dẫn
-                  });
-              }
+              //     // send cookie to client
+              //     res.cookie('refreshToken', refreshToken, {
+              //         httpOnly: true, // RẤT QUAN TRỌNG: Không thể truy cập bằng JavaScript phía client
+              //         secure: process.env.NODE_ENV === 'production' ? true : false, // Chỉ gửi qua HTTPS trong production
+              //         sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none', // Bảo vệ CSRF: 'strict', 'lax', or 'none'
+              //         // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày tính bằng mili giây (phù hợp với expiresIn của token)
+              //         maxAge: 2*60*1000, // 2 min
+              //         path: '/', // Cookie khả dụng trên tất cả các đường dẫn
+              //     });
+              // }
 
               res.status(200).json({user: others, accessToken: accessToken})
                     
@@ -291,14 +291,17 @@ app.get("/auth/user", async (req, res) => {
 
 // Logout Route
 app.get("/auth/logout", (req, res) => {
-    req.logout(() => {
+    req.logout(async() => {
       // Xóa cookie refresh token
-      res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' ? true : false ,
-        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none' ,
-        path: '/',
-      });
+      // res.clearCookie('refreshToken', {
+      //   httpOnly: true,
+      //   secure: process.env.NODE_ENV === 'production' ? true : false ,
+      //   sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none' ,
+      //   path: '/',
+      // });
+
+      //delete accessToken in redis
+      await redis.del(`accessToken:${req.query.accessToken}`)
 
       res.redirect(`${process.env.FRONT_END_URL}?logout=true`);
     });

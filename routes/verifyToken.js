@@ -6,136 +6,136 @@ const  redis = require('../config/redis');
 
 const verifyToken = async (req, res, next) => {
     const authHeader = req.headers.token
+   
+    // const refreshToken = req.cookies.refreshToken
 
-    const refreshToken = req.cookies.refreshToken
-
-    if(refreshToken===undefined){
-        res.clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production'? true : false ,
-            sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
-            path: '/',
-        });
-        return res.status(401).json( {message:'refreshToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true` })
-    }
+    // if(refreshToken===undefined){
+    //     res.clearCookie('refreshToken', {
+    //         httpOnly: true,
+    //         secure: process.env.NODE_ENV === 'production'? true : false ,
+    //         sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
+    //         path: '/',
+    //     });
+    //     return res.status(401).json( {message:'refreshToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true` })
+    // }
 
     // find refreshToken in redis
-    const refreshToken_redis = await redis.hGetAll(`refreshToken:${refreshToken}`)
+    // const refreshToken_redis = await redis.hGetAll(`refreshToken:${refreshToken}`)
 
     // if refreshToken not existed in redis redirect to login page
-    if(Object.keys(refreshToken_redis).length===0){
+    // if(Object.keys(refreshToken_redis).length===0){
 
-        // Xóa cookie refresh token
-        res.clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production'? true : false ,
-            sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
-            path: '/',
-        });
-        return res.status(401).json( {message:'refreshToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true` })
-    }
+    //     // Xóa cookie refresh token
+    //     res.clearCookie('refreshToken', {
+    //         httpOnly: true,
+    //         secure: process.env.NODE_ENV === 'production'? true : false ,
+    //         sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
+    //         path: '/',
+    //     });
+    //     return res.status(401).json( {message:'refreshToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true` })
+    // }
 
     // if refreshToken existed in redis , go check status of accessToken   
     if (authHeader && authHeader.startsWith('Bearer ')) { 
         let accessToken
 
         accessToken = authHeader.split(" ")[1].toString()   
-        console.log('received accessToken', accessToken)
+        // console.log('received accessToken', accessToken)
         // find accessToken in redis
         const accessToken_redis =  await redis.get(`accessToken:${accessToken}`)
 
         // if accessToken existed in redis simply set req.user 
-        if (accessToken_redis!==null){
+        if (accessToken_redis !== null){
             req.user = JSON.parse(accessToken_redis)
-            console.log('next!')
+            req.accessToken = accessToken
             next()
         }  else {
 
             // if acessToken is error and refreshToken still valid , we delete the old refreshToken and create new pair of access-refresh token.                                               
-            console.log('accessToken is expired or not valid')
+            // console.log('accessToken is expired or not valid')
 
             // delete refreshToken is redis
-            try{
-                if(refreshToken){
-                    await redis.del(`refreshToken:${refreshToken}`)
-                }
-            } catch(err){
-                console.log('delete refreshToken failed',err)
-            }
+            // try{
+            //     if(refreshToken){
+            //         await redis.del(`refreshToken:${refreshToken}`)
+            //     }
+            // } catch(err){
+            //     console.log('delete refreshToken failed',err)
+            // }
             
             
-            jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY, async (err, decoded)=>{
+            // jwt.verify(accessToken, process.env.JWT_SECRET_KEY, async (err, decoded)=>{
 
-                if (err) {
-                    res.clearCookie('refreshToken', {
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production'? true : false ,
-                        sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
-                        path: '/',
-                    });
-                    return res.status(401).json( {message:'refreshToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true` })
-                }
+                // if (err) {
+                    // res.clearCookie('refreshToken', {
+                    //     httpOnly: true,
+                    //     secure: process.env.NODE_ENV === 'production'? true : false ,
+                    //     sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
+                    //     path: '/',
+                    // });
+                //     return res.status(401).json( {message:'accessToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true` })
+                // }
 
-                const newRefreshToken = jwt.sign({
-                    id: decoded.id,
-                    isAdmin: decoded.isAdmin,
-                    isReporter: decoded.isReporter
-                }, process.env.REFRESH_SECRET_KEY, { expiresIn: '2m' })
+                // const newRefreshToken = jwt.sign({
+                //     id: decoded.id,
+                //     isAdmin: decoded.isAdmin,
+                //     isReporter: decoded.isReporter
+                // }, process.env.REFRESH_SECRET_KEY, { expiresIn: '2m' })
 
-                const newAccessToken = jwt.sign({
-                    id: decoded.id,
-                    isAdmin: decoded.isAdmin,
-                    isReporter: decoded.isReporter
-                }, process.env.JWT_SECRET_KEY, { expiresIn: '30s' })
+                // const newAccessToken = jwt.sign({
+                //     id: decoded.id,
+                //     isAdmin: decoded.isAdmin,
+                //     isReporter: decoded.isReporter
+                // }, process.env.JWT_SECRET_KEY, { expiresIn: '60s' })
                 
-                req.user = decoded
+                // req.user = decoded
                         
                 // add refreshToken to redis
-                try {
-                    const pipeline = redis.multi() 
-                    pipeline.hSet(`refreshToken:${newRefreshToken}`,{
-                            id: decoded.id,
-                            isAdmin: decoded.isAdmin.toString(),
-                            isReporter: decoded.isReporter.toString(),
-                    } )  
-                    pipeline.expire(`refreshToken:${newRefreshToken}`, 120) 
-                    await pipeline.exec()
-                } catch(err){
-                    console.log('addRefresh failed',err)
-                }
+                // try {
+                //     const pipeline = redis.multi() 
+                //     pipeline.hSet(`refreshToken:${newRefreshToken}`,{
+                //             id: decoded.id.toString(),
+                //             isAdmin: decoded.isAdmin.toString(),
+                //             isReporter: decoded.isReporter.toString(),
+                //     } )  
+                //     pipeline.expire(`refreshToken:${newRefreshToken}`, 120) 
+                //     await pipeline.exec()
+                // } catch(err){
+                //     console.log('addRefresh failed',err)
+                // }
 
                 // add accessToken to redis              
-                try{
-                    await redis.setEx(`accessToken:${newAccessToken}`, 30 , JSON.stringify({
-                        id: decoded.id.toString(),
-                        isAdmin: decoded.isAdmin.toString(),
-                        isReporter: decoded.isReporter.toString()
-                    }) )                                      
-                } catch(err){
-                    console.log('add accessToken to redis failed', err)
-                }
+                // try{
+                //     await redis.setEx(`accessToken:${newAccessToken}`, 60 , JSON.stringify({
+                //         id: decoded.id.toString(),
+                //         isAdmin: decoded.isAdmin.toString(),
+                //         isReporter: decoded.isReporter.toString()
+                //     }) )                                      
+                // } catch(err){
+                //     console.log('add accessToken to redis failed', err)
+                // }
                 
             // add refreshToken to client
-                res.cookie('refreshToken', newRefreshToken, {
-                    httpOnly: true,
-                    secure:  process.env.NODE_ENV === 'production'? true : false ,
-                    sameSite: process.env.NODE_ENV === 'production'? 'lax':'none'  ,
-                    maxAge: 2 * 60 * 1000,
-                    path: '/',
-                });
+                // res.cookie('refreshToken', newRefreshToken, {
+                //     httpOnly: true,
+                //     secure:  process.env.NODE_ENV === 'production'? true : false ,
+                //     sameSite: process.env.NODE_ENV === 'production'? 'lax':'none'  ,
+                //     maxAge: 2 * 60 * 1000,
+                //     path: '/',
+                // });
                         
-                console.log('created new accessToken: ', newAccessToken)                                                                          
-                return res.status(200).json({message:'created new accessToken', accessToken: newAccessToken}) 
-            })      
+                // console.log('created new accessToken ', newAccessToken)                                                                          
+                return res.status(401).json({message:'accessToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true`}) 
+        }    
                     
-        }
+        
     } else {
-        res.clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production'? true : false ,
-            sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
-            path: '/',
-        });
+        // res.clearCookie('refreshToken', {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === 'production'? true : false ,
+        //     sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none' ,
+        //     path: '/',
+        // });
         return res.status(401).json( {message:'refreshToken not valid', redirectTo:`${process.env.FRONT_END_URL}/login?sessionExpired=true` })
     }
 

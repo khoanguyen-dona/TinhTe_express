@@ -39,44 +39,51 @@ router.post('/login', async( req , res ) =>{
               isReporter: user.isReporter
             },
             process.env.JWT_SECRET_KEY,
-            {expiresIn:"30s"}
+            {expiresIn:"14d"}
         );
 
-        const refreshToken = jwt.sign(
-            {
-                id: user._id,
-                isAdmin: user.isAdmin,
-                isReporter: user.isReporter
-            },
-            process.env.REFRESH_SECRET_KEY,
-            {expiresIn:"2m"}
-        );
- 
+        // const refreshToken = jwt.sign(
+        //     {
+        //         id: user._id,
+        //         isAdmin: user.isAdmin,
+        //         isReporter: user.isReporter
+        //     },
+        //     process.env.REFRESH_SECRET_KEY,
+        //     {expiresIn:"2m"}
+        // );
+
+        //save accessToken in redis
+        await redis.setEx(`accessToken:${accessToken}`, 1209600 , JSON.stringify({
+            id: user._id.toString(),
+            isAdmin: user.isAdmin.toString(),
+            isReporter: user.isReporter.toString()
+        }) )
+
         //save refreshToken in redis
-        const pipeline = redis.multi() 
-        if(refreshToken){      
-            pipeline.hSet(`refreshToken:${refreshToken}`,{
-                id: user._id.toString(),
-                isAdmin: user.isAdmin.toString(),
-                isReporter: user.isReporter.toString()
-            } )  
-            pipeline.expire(`refreshToken:${refreshToken}`, 120)       
-            await pipeline.exec()
+        // const pipeline = redis.multi() 
+        // if(refreshToken){      
+        //     pipeline.hSet(`refreshToken:${refreshToken}`,{
+        //         id: user._id.toString(),
+        //         isAdmin: user.isAdmin.toString(),
+        //         isReporter: user.isReporter.toString()
+        //     } )  
+        //     pipeline.expire(`refreshToken:${refreshToken}`, 120)       
+        //     await pipeline.exec()
  
 
-        }
+            // send cookie to client
+            // res.cookie('refreshToken', refreshToken ,
+            //     {
+            //         httpOnly: true, // RẤT QUAN TRỌNG: Không thể truy cập bằng JavaScript phía client
+            //         secure: process.env.NODE_ENV === 'production'? true : false, // Chỉ gửi qua HTTPS trong production
+            //         sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none', // Bảo vệ CSRF: 'strict', 'lax', or 'none'
+            //         // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày tính bằng mili giây (phù hợp với expiresIn của token)
+            //         maxAge: 2 * 60 * 1000, 
+            //         path: '/', // Cookie khả dụng trên tất cả các đường dẫn
+            //     }
+            // );
+        // }
         
-        // send cookie to client
-        res.cookie('refreshToken', refreshToken ,
-            {
-                httpOnly: true, // RẤT QUAN TRỌNG: Không thể truy cập bằng JavaScript phía client
-                secure: process.env.NODE_ENV === 'production'? true : false, // Chỉ gửi qua HTTPS trong production
-                sameSite:  process.env.NODE_ENV === 'production'? 'lax' : 'none', // Bảo vệ CSRF: 'strict', 'lax', or 'none'
-                // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày tính bằng mili giây (phù hợp với expiresIn của token)
-                maxAge: 2 * 60 * 1000, 
-                path: '/', // Cookie khả dụng trên tất cả các đường dẫn
-            }
-        );
         const {password, ...rest} = user._doc
             
         return res.status(200).json({data: rest, accessToken: accessToken, message:"user login successfully"})
@@ -88,71 +95,55 @@ router.post('/login', async( req , res ) =>{
 })
 
 // try to get refreshToken
-router.get('/get-refresh-token',verifyToken, async(req, res) => {
-    try{
-        const refreshToken = req.cookies.refreshToken
+// router.get('/get-refresh-token',verifyToken, async(req, res) => {
+//     try{
+//         const refreshToken = req.cookies.refreshToken
 
-        if (!refreshToken){
+//         if (!refreshToken){
 
-            return res.redirect(`${process.env.FRONT_END_URL}/login?sessionExpired=true`)
+//             return res.redirect(`${process.env.FRONT_END_URL}/login?sessionExpired=true`)
 
-        } else {
+//         } else {
 
-            const refreshToken_redis = await redis.hGetAll(`refreshToken:${refreshToken}`)
+//             const refreshToken_redis = await redis.hGetAll(`refreshToken:${refreshToken}`)
 
-            if(Object.keys(refreshToken_redis).length>0){
-                await redis.hDel(`refreshToken:${refreshToken}`)
+//             if(Object.keys(refreshToken_redis).length>0){
+//                 await redis.hDel(`refreshToken:${refreshToken}`)
 
-                const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
+//                 const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
 
-                const newRefreshToken = jwt.sign({
-                    id: decoded.id,
-                    isAdmin: decoded.isAdmin,
-                    isReporter: decoded.isReporter
-                }, process.env.REFRESH_SECRET_KEY, { expiresIn: '2m' })
+//                 const newRefreshToken = jwt.sign({
+//                     id: decoded.id,
+//                     isAdmin: decoded.isAdmin,
+//                     isReporter: decoded.isReporter
+//                 }, process.env.REFRESH_SECRET_KEY, { expiresIn: '2m' })
 
-                const newAccessToken = jwt.sign({
-                    id: decoded.id,
-                    isAdmin: decoded.isAdmin,
-                    isReporter: decoded.isReporter
-                }, process.env.JWT_SECRET_KEY, { expiresIn: '30s' })
+//                 const newAccessToken = jwt.sign({
+//                     id: decoded.id,
+//                     isAdmin: decoded.isAdmin,
+//                     isReporter: decoded.isReporter
+//                 }, process.env.JWT_SECRET_KEY, { expiresIn: '30s' })
 
-                res.cookie('refreshToken', newRefreshToken, {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: 'lax',
-                    maxAge: 2 * 60 * 1000,
-                    path: '/',
-                });
+//                 res.cookie('refreshToken', newRefreshToken, {
+//                     httpOnly: true,
+//                     secure: false,
+//                     sameSite: 'lax',
+//                     maxAge: 2 * 60 * 1000,
+//                     path: '/',
+//                 });
 
-                res.status(200).json({message:'get successfully', accessToken: newAccessToken})
-            }
-        }
+//                 res.status(200).json({message:'get successfully', accessToken: newAccessToken})
+//             }
+//         }
 
 
-        // console.log('ref',Object.keys(refreshToken).length)
+//         // console.log('ref',Object.keys(refreshToken).length)
 
         
-    } catch(err){
-        console.log('get refreshToken failed',err)
-    }
-})
+//     } catch(err){
+//         console.log('get refreshToken failed',err)
+//     }
+// })
 
-router.get('/logout', async (req, res)=>{
-    // delete refreshToken in redis
-    const refreshToken = req.cookies.refreshToken
-    await redis.del(`refreshToken:${refreshToken}`)
-
-    // delete refreshToken in browser
-    res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' ? true : false ,
-        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none' ,
-        path: '/',
-      });
-
-    res.status(200).json({message:'logout successfully'})
-
-})
 
 module.exports = router
