@@ -123,4 +123,41 @@ router.get('/username/:username', async(req, res)=>{
     }
 })
 
+// get number of comment in current month
+router.get('/count/this-month', async (req, res) => {
+    try {
+        const now = new Date(); // Lấy thời gian hiện tại
+        const currentMonth = now.getMonth(); // Lấy tháng hiện tại (0-11)
+        const currentYear = now.getFullYear(); // Lấy năm hiện tại
+        const users = await User.find({})
+
+        // Lọc các bình luận được tạo trong tháng và năm hiện tại
+        const usersThisMonth = users.filter(user => {
+            const date = new Date(user.createdAt);
+            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+        });
+
+        const totalUsersThisMonth = usersThisMonth.length;
+
+        res.status(200).json({
+            message: `Tổng số user mới trong tháng ${currentMonth + 1}, năm ${currentYear}:`,
+            total: totalUsersThisMonth,
+        });
+
+    } catch (error) {
+        console.error('Lỗi khi đếm bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi xử lý yêu cầu.' });
+    }
+});
+
+// delete user
+router.delete('/:userId', isAdmin, async(req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.userId)
+        res.status(200).json({message:'delete user successfully'})
+    } catch(err){
+        console.log('delete user failed', err)
+    }
+})
+
 module.exports = router

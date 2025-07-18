@@ -24,6 +24,7 @@ const chatRoute = require('./routes/chat')
 const messageRoute = require('./routes/message')
 const redisRoute = require('./routes/redis');
 const notificationRoute = require('./routes/notification');
+const visitRoute = require('./routes/visit')
 
 // multithread
 // const cluster = require('cluster');
@@ -75,7 +76,7 @@ app.use('/api/chat', chatRoute )
 app.use('/api/message', messageRoute)
 app.use('/api/redis', redisRoute)
 app.use('/api/notification', notificationRoute)
-
+app.use('/api/visit', visitRoute)
 // Session setup
 app.use(
     session({

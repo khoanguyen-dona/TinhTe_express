@@ -222,4 +222,49 @@ router.get('/post-title/:title', async(req, res)=>{
     }
 })
 
+
+// get number of comment in current month
+router.get('/count/this-month', async (req, res) => {
+    try {
+        const now = new Date(); // Lấy thời gian hiện tại
+        // const currentMonth = now.getMonth(); // Lấy tháng hiện tại (0-11)
+        const currentMonth = 5
+        const currentYear = now.getFullYear(); // Lấy năm hiện tại
+        const posts = await Post.find({})
+
+        // Lọc các bình luận được tạo trong tháng và năm hiện tại
+        const postsThisMonth = posts.filter(post => {
+            const postDate = new Date(post.createdAt);
+            return postDate.getMonth() === currentMonth && postDate.getFullYear() === currentYear;
+        });
+
+        const totalPostsThisMonth = postsThisMonth.length;
+
+        res.status(200).json({
+            message: `Tổng số bài viết trong tháng ${currentMonth + 1}, năm ${currentYear}:`,
+            total: totalPostsThisMonth,
+        });
+
+    } catch (error) {
+        console.error('Lỗi khi đếm bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi xử lý yêu cầu.' });
+    }
+});
+
+// get number of comment in current month
+router.get('/count/all-posts', async (req, res) => {
+    try {          
+        const posts = await Post.countDocuments({})
+     
+        res.status(200).json({
+            message: `Tổng số bài viết :`,
+            total: posts,
+        });
+
+    } catch (error) {
+        console.error('Lỗi khi đếm bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi xử lý yêu cầu.' });
+    }
+});
+
 module.exports = router

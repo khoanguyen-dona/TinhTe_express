@@ -1,6 +1,8 @@
 const router = require('express').Router()
 const Comment = require('../models/Comment')
+const ReportComment = require('../models/ReportComment')
 const {
+    isAdmin,
     isAuthenticated,
 } = require('./verifyToken')
 
@@ -132,6 +134,60 @@ router.get('/latest-comment/:postId', async(req, res)=>{
     } catch(err){   
         console.log('fetch latest post failed ', err)
         
+    }
+})
+
+// get number of comment in current month
+router.get('/count/this-month', async (req, res) => {
+    try {
+        const now = new Date(); // Lấy thời gian hiện tại
+        const currentMonth = now.getMonth(); // Lấy tháng hiện tại (0-11)
+        const currentYear = now.getFullYear(); // Lấy năm hiện tại
+        const comments = await Comment.find({})
+
+        // Lọc các bình luận được tạo trong tháng và năm hiện tại
+        const commentsThisMonth = comments.filter(comment => {
+            const commentDate = new Date(comment.createdAt);
+            return commentDate.getMonth() === currentMonth && commentDate.getFullYear() === currentYear;
+        });
+
+        const totalCommentsThisMonth = commentsThisMonth.length;
+
+        res.status(200).json({
+            message: `Tổng số bình luận trong tháng ${currentMonth + 1}, năm ${currentYear}:`,
+            total: totalCommentsThisMonth,
+        });
+
+    } catch (error) {
+        console.error('Lỗi khi đếm bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi xử lý yêu cầu.' });
+    }
+});
+
+// get number of comment in current month
+router.get('/count/all-comments', async (req, res) => {
+    try {          
+        const comments = await Comment.countDocuments({})
+     
+        res.status(200).json({
+            message: `Tổng số bình luận :`,
+            total: comments,
+        });
+
+    } catch (error) {
+        console.error('Lỗi khi đếm bình luận:', error);
+        res.status(500).json({ message: 'Đã xảy ra lỗi khi xử lý yêu cầu.' });
+    }
+});
+
+router.delete('/:commentId', isAdmin, async(req, res) => {
+    try{
+        await Comment.findByIdAndDelete(req.params.commentId)
+        await ReportComment.findOneAndDelete({commentId: req.params.commentId})
+        res.status(200).json( {message:'delete comment successfully' } )
+        
+    } catch(err){
+        console.log('delete comment by commentId failed',err)
     }
 })
 
