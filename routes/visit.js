@@ -68,7 +68,9 @@ router.get('/', async(req, res) => {
                 count = count + 1
             }
             res.status(200).json({message:'success', dataChart: dataChart})
-        }else{
+           
+        }
+        else{
             for( i=1; i<=12; i++ ){
                 if(i<10){
                     pipeline.get(`visit-by-month:${year}-0${i}`)
