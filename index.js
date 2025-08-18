@@ -43,7 +43,7 @@ const visitRoute = require('./routes/visit')
 // }
 const app = express()
 app.use(cors({
-  origin: [`${process.env.FRONT_END_URL}`,`${process.env.FRONT_END_URL2}`],
+  origin: [`${process.env.FRONT_END_URL}`],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id','token'],
