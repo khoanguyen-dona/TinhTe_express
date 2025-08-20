@@ -47,6 +47,7 @@ const verifyToken = async (req, res, next) => {
         // if accessToken existed in redis simply set req.user 
         if (accessToken_redis !== null){
             req.user = JSON.parse(accessToken_redis)
+            console.log('req.user',req.user)
             req.accessToken = accessToken
             next()
         }  else {
@@ -250,7 +251,7 @@ const isAccountOwner = (req, res, next) => {
     verifyToken(req, res, async () => {
         const userRequestId = req.user.id
         const userIdUrlPath = req.params.userId
-        if( userRequestId === userIdUrlPath ) {
+        if( userRequestId === userIdUrlPath || req.user.isAdmin === 'true' ) {
             next()
         } else {
             res.status(403).json({message:'Forbidden: you are not the owner of this account'})
